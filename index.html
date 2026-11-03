@@ -2,13 +2,12 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>マイ・クローゼット - ストック管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>マイ・クローゼット</title>
   <style>
-    /* ベーススタイル */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #f5f5f7;
       color: #1d1d1f;
       padding-bottom: 90px;
@@ -16,413 +15,198 @@
 
     /* ヘッダー */
     header {
-      background-color: #ffffff;
-      padding: 16px 20px;
+      background: #ffffff;
+      padding: 14px;
       border-bottom: 1px solid #e5e5ea;
+      text-align: center;
       position: sticky;
       top: 0;
-      z-index: 100;
-      text-align: center;
+      z-index: 10;
     }
-    header h1 {
-      font-size: 1.1rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-    }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
 
-    /* 検索バー */
-    .search-container {
-      padding: 12px 16px 4px 16px;
-      background-color: #ffffff;
-    }
-    .search-input {
-      width: 100%;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid #d1d1d6;
-      background-color: #f2f2f7;
-      font-size: 0.9rem;
-      outline: none;
-    }
-    .search-input:focus {
-      border-color: #007aff;
-      background-color: #fff;
-    }
-
-    /* カテゴリタブナビゲーション */
-    .category-tabs {
+    /* カテゴリタブ（スクロール可能） */
+    .nav-tabs {
       display: flex;
       gap: 8px;
-      padding: 12px 16px;
-      overflow-x: auto;
-      background-color: #ffffff;
+      padding: 10px 14px;
+      background: #ffffff;
       border-bottom: 1px solid #e5e5ea;
-      -webkit-overflow-scrolling: touch;
+      overflow-x: auto;
+      white-space: nowrap;
     }
-    .category-tabs::-webkit-scrollbar { display: none; }
-    
     .tab-btn {
       background: #e5e5ea;
-      color: #3a3a3c;
+      color: #333;
       border: none;
       padding: 8px 16px;
-      border-radius: 18px;
+      border-radius: 20px;
       font-size: 0.85rem;
       font-weight: 500;
-      white-space: nowrap;
       cursor: pointer;
-      transition: all 0.2s ease;
     }
     .tab-btn.active {
-      background-color: #007aff;
-      color: #ffffff;
+      background: #007aff;
+      color: #fff;
     }
 
-    /* メインエリア */
-    .container {
-      padding: 16px;
-    }
-
-    /* 服の一覧（グリッド表示） */
+    /* メイングリッド表示 */
+    .container { padding: 14px; }
     .item-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (min-width: 600px) {
+      .item-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
     }
 
-    /* 服カードのデザイン */
-    .item-card {
-      background-color: #ffffff;
-      border-radius: 14px;
+    .card {
+      background: #fff;
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       cursor: pointer;
     }
-    .item-card:active {
-      transform: scale(0.98);
-    }
-    .item-image {
+    .card-img {
       width: 100%;
-      height: 170px;
+      height: 150px;
       object-fit: cover;
-      background-color: #f2f2f7;
+      background: #eee;
+      display: block;
     }
-    .item-info {
-      padding: 10px 12px 12px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .item-category {
-      font-size: 0.75rem;
-      color: #8e8e93;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    .item-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-    .tag {
-      font-size: 0.7rem;
-      background-color: #eef5ff;
-      color: #007aff;
-      padding: 3px 7px;
-      border-radius: 6px;
-      font-weight: 500;
-    }
+    .card-body { padding: 8px 10px; }
+    .card-cat { font-size: 0.7rem; color: #007aff; font-weight: bold; }
+    .card-tags { font-size: 0.75rem; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 空表示のスタイル */
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #8e8e93;
-      font-size: 0.9rem;
-      grid-column: 1 / -1;
-    }
-
-    /* フローティング登録ボタン */
-    .fab-btn {
+    /* 登録用フローティングボタン */
+    .fab {
       position: fixed;
       bottom: 24px;
-      right: 24px;
-      background-color: #007aff;
-      color: white;
+      right: 20px;
+      background: #007aff;
+      color: #fff;
       border: none;
       border-radius: 30px;
-      padding: 14px 22px;
+      padding: 14px 24px;
       font-size: 0.95rem;
-      font-weight: 600;
-      box-shadow: 0 4px 14px rgba(0,123,255,0.35);
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+      z-index: 20;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      z-index: 90;
     }
 
-    /* --- 写真拡大モーダル（ライトボックス） --- */
-    .lightbox-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0,0,0,0.88);
+    /* モーダル共通スタイル */
+    .modal {
       display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 300;
-      padding: 20px;
-      backdrop-filter: blur(8px);
-    }
-    .lightbox-overlay.active {
-      display: flex;
-    }
-    .lightbox-container {
-      position: relative;
-      max-width: 90%;
-      max-height: 80vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .lightbox-content {
-      max-width: 100%;
-      max-height: 80vh;
-      border-radius: 14px;
-      object-fit: contain;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    }
-
-    /* 閉じるボタン（右上） */
-    .lightbox-close {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      color: #ffffff;
-      font-size: 2rem;
-      cursor: pointer;
-      font-weight: 300;
-      z-index: 310;
-      background: rgba(0,0,0,0.4);
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* ゴミ箱削除ボタン（右上） */
-    .lightbox-delete-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background-color: rgba(255, 59, 48, 0.85);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 44px;
-      height: 44px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 310;
-      box-shadow: 0 4px 12px rgba(255,59,48,0.3);
-      transition: background-color 0.2s, transform 0.2s;
-    }
-    .lightbox-delete-btn:active {
-      transform: scale(0.92);
-      background-color: rgba(255, 59, 48, 1);
-    }
-
-    /* --- 新規登録モーダル画面 --- */
-    .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
       align-items: flex-end;
-      z-index: 200;
+      justify-content: center;
     }
-    .modal-overlay.active {
-      display: flex;
-    }
-    .modal-content {
-      background-color: #ffffff;
+    .modal.show { display: flex; }
+
+    .modal-box {
+      background: #fff;
       width: 100%;
       max-width: 500px;
-      border-top-left-radius: 20px;
-      border-top-right-radius: 20px;
-      padding: 24px;
-      max-height: 90vh;
+      border-radius: 16px 16px 0 0;
+      padding: 20px;
+      max-height: 85vh;
       overflow-y: auto;
-      animation: slideUp 0.3s ease-out;
     }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-    
-    .modal-header {
+    .modal-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
-    }
-    .modal-title {
-      font-size: 1.1rem;
-      font-weight: 600;
+      margin-bottom: 16px;
     }
     .close-btn {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      color: #8e8e93;
-      cursor: pointer;
+      background: none; border: none; font-size: 1.5rem; color: #888; cursor: pointer;
     }
 
-    .form-group {
-      margin-bottom: 18px;
-    }
-    .form-label {
-      display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #3a3a3c;
-      margin-bottom: 8px;
-    }
-    .form-control {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #d1d1d6;
-      font-size: 0.95rem;
-      background-color: #fafafa;
-    }
-
-    .image-picker {
-      border: 2px dashed #c7c7cc;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-      cursor: pointer;
-      background-color: #f9f9fb;
-      position: relative;
-    }
-    .image-picker input[type="file"] {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
-    .preview-img {
-      max-height: 180px;
-      max-width: 100%;
-      border-radius: 8px;
-      object-fit: cover;
-      display: none;
-      margin: 0 auto;
-    }
-    .picker-placeholder {
-      color: #8e8e93;
-      font-size: 0.85rem;
+    .form-item { margin-bottom: 14px; }
+    .form-item label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 6px; }
+    .form-item input, .form-item select {
+      width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 0.95rem;
     }
 
     .submit-btn {
-      width: 100%;
-      background-color: #007aff;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 14px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
+      width: 100%; background: #007aff; color: #fff; border: none; padding: 12px;
+      border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
     }
+
+    /* 写真拡大モーダル（ライトボックス） */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+    }
+    .lightbox.show { display: flex; }
+    .lightbox img { max-width: 90%; max-height: 55vh; border-radius: 8px; object-fit: contain; }
+    
+    .lightbox-info {
+      color: #fff;
+      text-align: center;
+      margin-top: 12px;
+      font-size: 0.95rem;
+    }
+    .lightbox-tools {
+      margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    }
+    .btn-edit { background: #34c759; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .btn-delete { background: #ff3b30; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .btn-close-lb { background: #555; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <!-- ヘッダー -->
   <header>
     <h1>マイ・クローゼット</h1>
   </header>
 
-  <!-- 検索バー -->
-  <div class="search-container">
-    <input type="text" id="searchInput" class="search-input" placeholder="タグやキーワードで検索..." oninput="handleSearch()">
-  </div>
-
   <!-- カテゴリタブ -->
-  <nav class="category-tabs">
-    <button class="tab-btn active" onclick="selectCategory('すべて', this)">すべて</button>
-    <button class="tab-btn" onclick="selectCategory('トップス', this)">トップス</button>
-    <button class="tab-btn" onclick="selectCategory('アウター', this)">アウター</button>
-    <button class="tab-btn" onclick="selectCategory('パンツ', this)">パンツ</button>
-    <button class="tab-btn" onclick="selectCategory('帽子', this)">帽子</button>
-    <button class="tab-btn" onclick="selectCategory('ファッション小物', this)">ファッション小物</button>
-    <button class="tab-btn" onclick="selectCategory('バッグ', this)">バッグ</button>
+  <nav class="nav-tabs" id="tabContainer">
+    <button class="tab-btn active" data-cat="すべて">すべて</button>
+    <button class="tab-btn" data-cat="トップス">トップス</button>
+    <button class="tab-btn" data-cat="アウター">アウター</button>
+    <button class="tab-btn" data-cat="パンツ">パンツ</button>
+    <button class="tab-btn" data-cat="帽子">帽子</button>
+    <button class="tab-btn" data-cat="ファッション小物">ファッション小物</button>
+    <button class="tab-btn" data-cat="バッグ">バッグ</button>
   </nav>
 
-  <!-- メイン：服のストック一覧 -->
+  <!-- 服一覧エリア -->
   <main class="container">
-    <div class="item-grid" id="itemGrid">
-      <!-- JavaScriptで動的に追加されます -->
-    </div>
+    <div class="item-grid" id="gridArea"></div>
   </main>
 
-  <!-- 登録用フローティングボタン -->
-  <button class="fab-btn" onclick="openModal()">
-    <span>＋</span> 服を登録
-  </button>
-
-  <!-- 写真拡大モーダル（ライトボックス） -->
-  <div class="lightbox-overlay" id="lightboxOverlay">
-    <!-- 左上閉じるボタン -->
-    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-    
-    <!-- 右上ゴミ箱（削除）ボタン -->
-    <button class="lightbox-delete-btn" onclick="deleteCurrentItem()" title="削除">
-      🗑️
-    </button>
-
-    <div class="lightbox-container">
-      <img id="lightboxImage" class="lightbox-content" src="" alt="拡大写真">
-    </div>
-  </div>
+  <!-- 服を登録ボタン -->
+  <button class="fab" id="openAddModalBtn">＋ 服を登録</button>
 
   <!-- 新規登録モーダル画面 -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">新しいアイテムを追加</h2>
-        <button class="close-btn" onclick="closeModal()">&times;</button>
+  <div class="modal" id="addModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modalTitle">服を新しく登録</h3>
+        <button class="close-btn" id="closeAddModalBtn">&times;</button>
       </div>
-
-      <form id="itemForm" onsubmit="handleFormSubmit(event)">
-        <!-- 写真撮影/アップロード -->
-        <div class="form-group">
-          <label class="form-label">写真（撮影または選択）</label>
-          <div class="image-picker">
-            <input type="file" accept="image/*" capture="environment" id="imageInput" onchange="previewImage(event)" required>
-            <div id="pickerText" class="picker-placeholder">
-              📷 タップして撮影・写真を選択
-            </div>
-            <img id="imagePreview" class="preview-img" alt="プレビュー">
-          </div>
+      <form id="addForm">
+        <div class="form-item" id="fileInputContainer">
+          <label>写真を選択/撮影</label>
+          <input type="file" id="fileInput" accept="image/*">
         </div>
-
-        <!-- カテゴリ選択 -->
-        <div class="form-group">
-          <label class="form-label" for="categorySelect">カテゴリ</label>
-          <select id="categorySelect" class="form-control" required>
+        <div class="form-item">
+          <label>カテゴリ</label>
+          <select id="catSelect">
             <option value="トップス">トップス</option>
             <option value="アウター">アウター</option>
             <option value="パンツ">パンツ</option>
@@ -431,156 +215,169 @@
             <option value="バッグ">バッグ</option>
           </select>
         </div>
-
-        <!-- 説明・タグ入力 -->
-        <div class="form-group">
-          <label class="form-label" for="tagsInput">説明・タグ（カンマ区切り）</label>
-          <input type="text" id="tagsInput" class="form-control" placeholder="例: 白T, 夏物, お気に入り">
+        <div class="form-item">
+          <label>タグ/説明 (カンマ区切り)</label>
+          <input type="text" id="tagInput" placeholder="例: 黒, 夏物, お気に入り">
         </div>
-
-        <button type="submit" class="submit-btn">クローゼットに追加</button>
+        <button type="submit" class="submit-btn" id="submitBtnText">登録する</button>
       </form>
     </div>
   </div>
 
+  <!-- 写真拡大＆編集モーダル -->
+  <div class="lightbox" id="lightbox">
+    <img id="lbImg" src="" alt="拡大写真">
+    <div class="lightbox-info" id="lbInfo"></div>
+    <div class="lightbox-tools">
+      <button class="btn-edit" id="editBtn">✏️ タグを編集</button>
+      <button class="btn-delete" id="deleteBtn">🗑️ 削除</button>
+      <button class="btn-close-lb" id="closeLbBtn">閉じる</button>
+    </div>
+  </div>
+
   <script>
-    // 初期サンプルデータ
-    let stockItems = [
-      { id: 1, category: 'トップス', image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800', tags: ['白T', '夏物'] },
-      { id: 2, category: 'パンツ', image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800', tags: ['デニム', 'カジュアル'] },
-      { id: 3, category: 'アウター', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=800', tags: ['レザージャケット', '黒'] },
-      { id: 4, category: '帽子', image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800', tags: ['キャップ', 'ストリート'] },
-      { id: 5, category: 'バッグ', image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800', tags: ['リュック', '黒'] }
+    // 初期データ
+    let items = [
+      { id: 1, cat: 'トップス', img: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500', tags: '白T, 夏物' },
+      { id: 2, cat: 'パンツ', img: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500', tags: 'デニム' },
+      { id: 3, cat: 'アウター', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500', tags: 'ジャケット, 黒' }
     ];
 
-    let currentCategory = 'すべて';
-    let searchQuery = '';
-    let selectedImageDataUrl = '';
-    let activeItemId = null; // 現在拡大表示中のアイテムID
+    let currentCat = 'すべて';
+    let selectedId = null;
+    let isEditing = false; // 編集モードかどうかのフラグ
 
-    // カード描画関数
-    function renderGrid() {
-      const grid = document.getElementById('itemGrid');
-      grid.innerHTML = '';
+    const gridArea = document.getElementById('gridArea');
+    const addModal = document.getElementById('addModal');
+    const lightbox = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lbImg');
+    const lbInfo = document.getElementById('lbInfo');
 
-      const filtered = stockItems.filter(item => {
-        const matchesCategory = (currentCategory === 'すべて') || (item.category === currentCategory);
-        const matchesSearch = searchQuery === '' || item.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) || item.category.includes(searchQuery);
-        return matchesCategory && matchesSearch;
-      });
-
-      if (filtered.length === 0) {
-        grid.innerHTML = '<div class="empty-state">該当するアイテムが見つかりませんでした</div>';
+    // 一覧描画処理
+    function render() {
+      gridArea.innerHTML = '';
+      const list = items.filter(i => currentCat === 'すべて' || i.cat === currentCat);
+      
+      if (list.length === 0) {
+        gridArea.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#888; padding:30px;">アイテムがありません</p>';
         return;
       }
 
-      filtered.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'item-card';
-        card.onclick = () => openLightbox(item);
-        
-        card.innerHTML = `
-          <img src="${item.image}" alt="${item.category}" class="item-image">
-          <div class="item-info">
-            <span class="item-category">${item.category}</span>
-            <div class="item-tags">
-              ${item.tags.map(tag => `<span class="tag">#${tag}</span>`).join('')}
-            </div>
+      list.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+          <img src="${item.img}" class="card-img" alt="">
+          <div class="card-body">
+            <div class="card-cat">${item.cat}</div>
+            <div class="card-tags">#${item.tags.replace(/,/g, ' #')}</div>
           </div>
         `;
-        grid.appendChild(card);
+        // タップで拡大
+        div.addEventListener('click', () => {
+          selectedId = item.id;
+          lbImg.src = item.img;
+          lbInfo.innerHTML = `<b>[${item.cat}]</b> #${item.tags.replace(/,/g, ' #')}`;
+          lightbox.classList.add('show');
+        });
+        gridArea.appendChild(div);
       });
     }
 
-    // 写真拡大（ライトボックス）関数
-    function openLightbox(item) {
-      activeItemId = item.id;
-      const overlay = document.getElementById('lightboxOverlay');
-      const img = document.getElementById('lightboxImage');
-      img.src = item.image;
-      overlay.classList.add('active');
-    }
+    // カテゴリタブ切り替えイベント
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentCat = e.target.getAttribute('data-cat');
+        render();
+      });
+    });
 
-    function closeLightbox() {
-      document.getElementById('lightboxOverlay').classList.remove('active');
-      activeItemId = null;
-    }
+    // 新規登録モーダルを開く
+    document.getElementById('openAddModalBtn').addEventListener('click', () => {
+      isEditing = false;
+      document.getElementById('modalTitle').innerText = '服を新しく登録';
+      document.getElementById('submitBtnText').innerText = '登録する';
+      document.getElementById('fileInputContainer').style.display = 'block';
+      document.getElementById('fileInput').required = true;
+      document.getElementById('addForm').reset();
+      addModal.classList.add('show');
+    });
 
-    // 現在開いているアイテムの削除処理
-    function deleteCurrentItem() {
-      if (!activeItemId) return;
+    // モーダルを閉じる
+    document.getElementById('closeAddModalBtn').addEventListener('click', () => addModal.classList.remove('show'));
+    document.getElementById('closeLbBtn').addEventListener('click', () => lightbox.classList.remove('show'));
 
-      if (confirm('このアイテムをクローゼットから削除しますか？')) {
-        stockItems = stockItems.filter(item => item.id !== activeItemId);
-        renderGrid();
-        closeLightbox();
+    // 削除処理
+    document.getElementById('deleteBtn').addEventListener('click', () => {
+      if (selectedId && confirm('このアイテムを削除しますか？')) {
+        items = items.filter(i => i.id !== selectedId);
+        lightbox.classList.remove('show');
+        render();
       }
-    }
+    });
 
-    // カテゴリ切替
-    function selectCategory(category, element) {
-      currentCategory = category;
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      element.classList.add('active');
-      renderGrid();
-    }
+    // タグ編集ボタンを押したとき
+    document.getElementById('editBtn').addEventListener('click', () => {
+      const targetItem = items.find(i => i.id === selectedId);
+      if (!targetItem) return;
 
-    // 検索入力
-    function handleSearch() {
-      searchQuery = document.getElementById('searchInput').value.trim();
-      renderGrid();
-    }
+      lightbox.classList.remove('show'); // 拡大画面を閉じる
 
-    // モーダル操作
-    function openModal() {
-      document.getElementById('modalOverlay').classList.add('active');
-    }
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('active');
-      document.getElementById('itemForm').reset();
-      document.getElementById('imagePreview').style.display = 'none';
-      document.getElementById('pickerText').style.display = 'block';
-      selectedImageDataUrl = '';
-    }
+      // 編集モードでモーダルを開く
+      isEditing = true;
+      document.getElementById('modalTitle').innerText = 'タグ・カテゴリを編集';
+      document.getElementById('submitBtnText').innerText = '変更を保存する';
+      document.getElementById('fileInputContainer').style.display = 'none'; // 写真は変更不可（そのままでOK）
+      document.getElementById('fileInput').required = false;
 
-    // 画像プレビュー処理
-    function previewImage(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          selectedImageDataUrl = e.target.result;
-          const preview = document.getElementById('imagePreview');
-          preview.src = selectedImageDataUrl;
-          preview.style.display = 'block';
-          document.getElementById('pickerText').style.display = 'none';
-        };
-        reader.readAsDataURL(file);
+      // 現在の値をフォームにセット
+      document.getElementById('catSelect').value = targetItem.cat;
+      document.getElementById('tagInput').value = targetItem.tags;
+
+      addModal.classList.add('show');
+    });
+
+    // フォーム送信（新規登録 or 編集保存）
+    document.getElementById('addForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const cat = document.getElementById('catSelect').value;
+      const tags = document.getElementById('tagInput').value || 'なし';
+
+      if (isEditing) {
+        // 編集保存の場合
+        const targetItem = items.find(i => i.id === selectedId);
+        if (targetItem) {
+          targetItem.cat = cat;
+          targetItem.tags = tags;
+        }
+        isEditing = false;
+        addModal.classList.remove('show');
+        render();
+      } else {
+        // 新規登録の場合
+        const file = document.getElementById('fileInput').files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            items.unshift({
+              id: Date.now(),
+              cat: cat,
+              img: evt.target.result,
+              tags: tags
+            });
+            render();
+            addModal.classList.remove('show');
+            document.getElementById('addForm').reset();
+          };
+          reader.readAsDataURL(file);
+        }
       }
-    }
+    });
 
-    // 新規登録処理
-    function handleFormSubmit(event) {
-      event.preventDefault();
-      
-      const category = document.getElementById('categorySelect').value;
-      const tagsRaw = document.getElementById('tagsInput').value;
-      const tags = tagsRaw.split(/[,、\s]+/).filter(t => t.length > 0);
-
-      const newItem = {
-        id: Date.now(),
-        category: category,
-        image: selectedImageDataUrl || 'https://via.placeholder.com/400?text=No+Image',
-        tags: tags.length > 0 ? tags : ['未設定']
-      };
-
-      stockItems.unshift(newItem);
-      renderGrid();
-      closeModal();
-    }
-
-    // 初期ロード
-    renderGrid();
+    // 初期起動
+    render();
   </script>
 </body>
 </html>
