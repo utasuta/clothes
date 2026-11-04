@@ -72,6 +72,7 @@
       overflow: hidden;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       cursor: pointer;
+      position: relative;
     }
     .card-img {
       width: 100%;
@@ -83,6 +84,25 @@
     .card-body { padding: 8px 10px; }
     .card-cat { font-size: 0.7rem; color: #007aff; font-weight: bold; }
     .card-tags { font-size: 0.75rem; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* お気に入り（ハート）ボタン */
+    .fav-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255, 255, 255, 0.85);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      z-index: 2;
+    }
 
     /* 登録用フローティングボタン */
     .fab {
@@ -181,6 +201,7 @@
   <!-- カテゴリタブ -->
   <nav class="nav-tabs" id="tabContainer">
     <button class="tab-btn active" data-cat="すべて">すべて</button>
+    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
     <button class="tab-btn" data-cat="トップス">トップス</button>
     <button class="tab-btn" data-cat="アウター">アウター</button>
     <button class="tab-btn" data-cat="パンツ">パンツ</button>
@@ -243,9 +264,9 @@
   <script>
     // LocalStorageからデータを読み込む
     let items = JSON.parse(localStorage.getItem('my_closet_items')) || [
-      { id: 1, cat: 'トップス', img: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500', tags: '白T, 夏物' },
-      { id: 2, cat: 'パンツ', img: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500', tags: 'デニム' },
-      { id: 3, cat: 'アウター', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500', tags: 'ジャケット, 黒' }
+      { id: 1, cat: 'トップス', img: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500', tags: '白T, 夏物', isFav: true },
+      { id: 2, cat: 'パンツ', img: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500', tags: 'デニム', isFav: false },
+      { id: 3, cat: 'アウター', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500', tags: 'ジャケット, 黒', isFav: false }
     ];
 
     // データをLocalStorageに保存する関数
@@ -266,7 +287,13 @@
     // 一覧描画処理
     function render() {
       gridArea.innerHTML = '';
-      const list = items.filter(i => currentCat === 'すべて' || i.cat === currentCat);
+      
+      // フィルター条件分岐（お気に入り or 各カテゴリ or すべて）
+      const list = items.filter(i => {
+        if (currentCat === 'お気に入り') return i.isFav;
+        if (currentCat === 'すべて') return true;
+        return i.cat === currentCat;
+      });
       
       if (list.length === 0) {
         gridArea.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#888; padding:30px;">アイテムがありません</p>';
@@ -277,18 +304,31 @@
         const div = document.createElement('div');
         div.className = 'card';
         div.innerHTML = `
+          <button class="fav-btn" data-id="${item.id}">${item.isFav ? '❤️' : '🤍'}</button>
           <img src="${item.img}" class="card-img" alt="">
           <div class="card-body">
             <div class="card-cat">${item.cat}</div>
             <div class="card-tags">#${item.tags.replace(/,/g, ' #')}</div>
           </div>
         `;
+
+        // お気に入りボタンタップイベント
+        const favBtn = div.querySelector('.fav-btn');
+        favBtn.addEventListener('click', (e) => {
+          e.stopPropagation(); // カード全体の拡大表示イベントを防ぐ
+          item.isFav = !item.isFav;
+          saveItems();
+          render();
+        });
+
+        // カード全体のタップで拡大表示
         div.addEventListener('click', () => {
           selectedId = item.id;
           lbImg.src = item.img;
-          lbInfo.innerHTML = `<b>[${item.cat}]</b> #${item.tags.replace(/,/g, ' #')}`;
+          lbInfo.innerHTML = `<b>[${item.cat}]</b> #${item.tags.replace(/,/g, ' #')} ${item.isFav ? '❤️' : ''}`;
           lightbox.classList.add('show');
         });
+
         gridArea.appendChild(div);
       });
     }
@@ -368,13 +408,12 @@
         if (file) {
           const reader = new FileReader();
           reader.onload = function(evt) {
-            // 画質を適度に抑えて容量オーバー（バグ）を防ぐための圧縮処理（Canvas使用）
             const img = new Image();
             img.onload = function() {
               const canvas = document.createElement('canvas');
               let width = img.width;
               let height = img.height;
-              const max_size = 800; // 最大幅・高さ制限
+              const max_size = 800;
 
               if (width > height) {
                 if (width > max_size) {
@@ -393,14 +432,14 @@
               const ctx = canvas.getContext('2d');
               ctx.drawImage(img, 0, 0, width, height);
               
-              // 圧縮された画像データを取得
               const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
 
               items.unshift({
                 id: Date.now(),
                 cat: cat,
                 img: compressedDataUrl,
-                tags: tags
+                tags: tags,
+                isFav: false // 初期状態は未お気に入り
               });
 
               saveItems();
