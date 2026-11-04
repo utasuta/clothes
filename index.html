@@ -247,7 +247,15 @@
       { id: 2, cat: 'パンツ', img: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500', tags: 'デニム' },
       { id: 3, cat: 'アウター', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500', tags: 'ジャケット, 黒' }
     ];
-
+// LocalStorageからデータを読み込む（保存データがなければ初期データを使用）
+let items = JSON.parse(localStorage.getItem('my_closet_items')) || [
+  { id: 1, cat: 'トップス', img: '...', tags: '白T, 夏物' },
+  ...
+];
+    // データをLocalStorageに保存する関数
+function saveItems() {
+  localStorage.setItem('my_closet_items', JSON.stringify(items));
+}
     let currentCat = 'すべて';
     let selectedId = null;
     let isEditing = false; // 編集モードかどうかのフラグ
