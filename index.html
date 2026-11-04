@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="apple-touch-icon" href="icon.png">
-  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.PNG">
+  <link rel="icon" type="image/png" href="icon.PNG">
   <title>マイ・クローゼット</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -102,7 +102,7 @@
       z-index: 2;
     }
 
-    /* 選択モード中のカードデザイン（水色強調） */
+    /* 選択モード中のカードデザイン */
     .card.selectable {
       border: 2px solid transparent;
     }
@@ -129,6 +129,7 @@
       padding: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       margin-bottom: 12px;
+      cursor: pointer;
     }
     .coord-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -139,9 +140,6 @@
     }
     .coord-img {
       width: 80px; height: 80px; object-fit: cover; border-radius: 8px; background: #eee;
-    }
-    .coord-del-btn {
-      background: #ff3b30; color: white; border: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer;
     }
 
     /* 登録用フローティングボタン */
@@ -220,7 +218,7 @@
       border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
     }
 
-    /* ライトボックス */
+    /* ライトボックス（服・コーデ共通拡大画面） */
     .lightbox {
       display: none;
       position: fixed;
@@ -233,7 +231,26 @@
       padding: 20px;
     }
     .lightbox.show { display: flex; }
-    .lightbox img { max-width: 90%; max-height: 55vh; border-radius: 8px; object-fit: contain; }
+    .lightbox-content {
+      width: 100%; max-width: 450px; max-height: 70vh; overflow-y: auto; text-align: center;
+    }
+    .lightbox img { max-width: 90%; max-height: 55vh; border-radius: 8px; object-fit: contain; margin: 0 auto; display: block; }
+    
+    /* コーデ拡大時のアイテムグリッド */
+    .lightbox-coord-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+    .lightbox-coord-item {
+      background: #222; border-radius: 8px; padding: 8px; text-align: left;
+    }
+    .lightbox-coord-item img {
+      width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 6px;
+    }
+    .lightbox-coord-item span { color: #fff; font-size: 0.75rem; display: block; }
+
     .lightbox-info { color: #fff; text-align: center; margin-top: 12px; font-size: 0.95rem; }
     .lightbox-tools { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .btn-edit { background: #34c759; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
@@ -250,14 +267,14 @@
   <!-- カテゴリタブ -->
   <nav class="nav-tabs" id="tabContainer">
     <button class="tab-btn active" data-cat="すべて">すべて</button>
-    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
     <button class="tab-btn" data-cat="トップス">トップス</button>
     <button class="tab-btn" data-cat="アウター">アウター</button>
     <button class="tab-btn" data-cat="パンツ">パンツ</button>
     <button class="tab-btn" data-cat="帽子">帽子</button>
     <button class="tab-btn" data-cat="ファッション小物">ファッション小物</button>
     <button class="tab-btn" data-cat="バッグ">バッグ</button>
-    <button class="tab-btn" data-cat="コーディネート">✨ コーディネート</button>
+    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
+    <button class="tab-btn" data-cat="コーディネート">コーディネート</button>
   </nav>
 
   <!-- メイン表示エリア -->
@@ -308,12 +325,12 @@
     </div>
   </div>
 
-  <!-- 写真拡大＆編集モーダル -->
+  <!-- 拡大表示用ライトボックス -->
   <div class="lightbox" id="lightbox">
-    <img id="lbImg" src="" alt="拡大写真">
+    <div class="lightbox-content" id="lbContent"></div>
     <div class="lightbox-info" id="lbInfo"></div>
     <div class="lightbox-tools">
-      <button class="btn-edit" id="editBtn">✏️ タグを編集</button>
+      <button class="btn-edit" id="editBtn" style="display: none;">✏️ タグを編集</button>
       <button class="btn-delete" id="deleteBtn">🗑️ 削除</button>
       <button class="btn-close-lb" id="closeLbBtn">閉じる</button>
     </div>
@@ -335,9 +352,10 @@
     let currentCat = 'すべて';
     let selectModeCat = 'すべて';
     let selectedId = null;
+    let selectedOutfitId = null; // 拡大中のコーデID
     let isEditing = false;
     let isSelectingMode = false;
-    let selectedItemIds = []; // 選択中のアイテムIDリスト（タブを切り替えても消えずに保持されます）
+    let selectedItemIds = [];
 
     const gridArea = document.getElementById('gridArea');
     const coordArea = document.getElementById('coordArea');
@@ -346,8 +364,9 @@
     const selectCountText = document.getElementById('selectCountText');
     const addModal = document.getElementById('addModal');
     const lightbox = document.getElementById('lightbox');
-    const lbImg = document.getElementById('lbImg');
+    const lbContent = document.getElementById('lbContent');
     const lbInfo = document.getElementById('lbInfo');
+    const editBtn = document.getElementById('editBtn');
 
     // 描画メイン
     function render() {
@@ -371,7 +390,7 @@
     // アイテム一覧描画
     function renderItems() {
       if (!gridArea) return;
-      gridArea.innerHTML = ''; // 画面を一度きれいにリセットして重複を防ぐ
+      gridArea.innerHTML = '';
 
       const activeFilter = isSelectingMode ? selectModeCat : currentCat;
       const list = items.filter(i => {
@@ -390,9 +409,7 @@
         div.className = 'card';
         if (isSelectingMode) {
           div.classList.add('selectable');
-          if (selectedItemIds.includes(item.id)) {
-            div.classList.add('selected'); // 保持されているIDなら水色の選択枠をつける
-          }
+          if (selectedItemIds.includes(item.id)) div.classList.add('selected');
         }
 
         div.innerHTML = `
@@ -406,17 +423,19 @@
 
         div.addEventListener('click', () => {
           if (isSelectingMode) {
-            // タブを切り替えても選択状態の配列（selectedItemIds）に追加・削除が行われる
             if (selectedItemIds.includes(item.id)) {
               selectedItemIds = selectedItemIds.filter(id => id !== item.id);
             } else {
               selectedItemIds.push(item.id);
             }
             if (selectCountText) selectCountText.innerText = `${selectedItemIds.length}個 選択中`;
-            renderItems(); // 再描画して水色の枠を即座に反映
+            renderItems();
           } else {
             selectedId = item.id;
-            if (lbImg) lbImg.src = item.img;
+            selectedOutfitId = null; // 服モード
+            if (editBtn) editBtn.style.display = 'inline-block'; // 編集ボタンを表示
+
+            if (lbContent) lbContent.innerHTML = `<img src="${item.img}" alt="拡大写真">`;
             if (lbInfo) lbInfo.innerHTML = `<b>[${item.cat}]</b> #${item.tags.replace(/,/g, ' #')} ${item.isFav ? '❤️' : ''}`;
             if (lightbox) lightbox.classList.add('show');
           }
@@ -456,20 +475,34 @@
         div.innerHTML = `
           <div class="coord-header">
             <span>コーデ ${outfits.length - index}</span>
-            <button class="coord-del-btn" type="button" data-id="${of.id}">削除</button>
+            <span style="font-size:0.8rem; color:#888;">${ofItems.length}点のアイテム</span>
           </div>
           <div class="coord-images">
             ${ofItems.map(i => `<img src="${i.img}" class="coord-img">`).join('')}
           </div>
         `;
 
-        div.querySelector('.coord-del-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (confirm('このコーディネートを削除しますか？')) {
-            outfits = outfits.filter(o => o.id !== of.id);
-            saveOutfits();
-            renderOutfits();
+        // コーデカードをタップしたとき（拡大表示）
+        div.addEventListener('click', () => {
+          selectedOutfitId = of.id;
+          selectedId = null; // コーデモード
+          if (editBtn) editBtn.style.display = 'none'; // コーデにはタグ編集はないので隠す
+
+          if (lbContent) {
+            lbContent.innerHTML = `
+              <div class="lightbox-coord-grid">
+                ${ofItems.map(i => `
+                  <div class="lightbox-coord-item">
+                    <img src="${i.img}">
+                    <span><b>[${i.cat}]</b></span>
+                    <span>#${i.tags.replace(/,/g, ' #')}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
           }
+          if (lbInfo) lbInfo.innerHTML = `<b>コーデ ${outfits.length - index}</b> の詳細`;
+          if (lightbox) lightbox.classList.add('show');
         });
 
         coordArea.appendChild(div);
@@ -488,7 +521,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             selectModeCat = cat;
-            renderItems(); // 選択状態を保持したまま指定ジャンルの服だけを表示
+            renderItems();
           } else {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
@@ -576,17 +609,28 @@
       const closeLb = document.getElementById('closeLbBtn');
       if (closeLb) closeLb.addEventListener('click', () => { if (lightbox) lightbox.classList.remove('show'); });
 
-      // 削除ボタン
+      // 削除ボタン（服またはコーデの削除）
       const delBtn = document.getElementById('deleteBtn');
       if (delBtn) {
         delBtn.addEventListener('click', () => {
-          if (selectedId && confirm('このアイテムを削除しますか？')) {
-            items = items.filter(i => i.id !== selectedId);
-            outfits.forEach(o => { o.itemIds = o.itemIds.filter(id => id !== selectedId); });
-            saveItems();
-            saveOutfits();
-            if (lightbox) lightbox.classList.remove('show');
-            render();
+          if (selectedId !== null) {
+            // 服の削除
+            if (confirm('このアイテムを削除しますか？')) {
+              items = items.filter(i => i.id !== selectedId);
+              outfits.forEach(o => { o.itemIds = o.itemIds.filter(id => id !== selectedId); });
+              saveItems();
+              saveOutfits();
+              if (lightbox) lightbox.classList.remove('show');
+              render();
+            }
+          } else if (selectedOutfitId !== null) {
+            // コーデの削除
+            if (confirm('このコーディネートを削除しますか？')) {
+              outfits = outfits.filter(o => o.id !== selectedOutfitId);
+              saveOutfits();
+              if (lightbox) lightbox.classList.remove('show');
+              render();
+            }
           }
         });
       }
