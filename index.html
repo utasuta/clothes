@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="apple-touch-icon" href="icon.PNG">
-  <link rel="icon" type="image/png" href="icon.PNG">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" href="icon.png">
   <title>マイ・クローゼット</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -107,8 +107,8 @@
       border: 2px solid transparent;
     }
     .card.selectable.selected {
-      border: 3px solid #32ade6; /* 鮮やかな水色 */
-      background-color: #f0f9ff;  /* 選択時のごく薄い水色の背景 */
+      border: 3px solid #32ade6;
+      background-color: #f0f9ff;
       box-shadow: 0 4px 12px rgba(50, 173, 230, 0.3);
       transform: scale(0.98);
     }
@@ -250,14 +250,14 @@
   <!-- カテゴリタブ -->
   <nav class="nav-tabs" id="tabContainer">
     <button class="tab-btn active" data-cat="すべて">すべて</button>
+    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
     <button class="tab-btn" data-cat="トップス">トップス</button>
     <button class="tab-btn" data-cat="アウター">アウター</button>
     <button class="tab-btn" data-cat="パンツ">パンツ</button>
     <button class="tab-btn" data-cat="帽子">帽子</button>
     <button class="tab-btn" data-cat="ファッション小物">ファッション小物</button>
     <button class="tab-btn" data-cat="バッグ">バッグ</button>
-    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
-    <button class="tab-btn" data-cat="コーディネート">コーディネート</button>
+    <button class="tab-btn" data-cat="コーディネート">✨ コーディネート</button>
   </nav>
 
   <!-- メイン表示エリア -->
@@ -337,7 +337,7 @@
     let selectedId = null;
     let isEditing = false;
     let isSelectingMode = false;
-    let selectedItemIds = [];
+    let selectedItemIds = []; // 選択中のアイテムIDリスト（タブを切り替えても消えずに保持されます）
 
     const gridArea = document.getElementById('gridArea');
     const coordArea = document.getElementById('coordArea');
@@ -370,6 +370,9 @@
 
     // アイテム一覧描画
     function renderItems() {
+      if (!gridArea) return;
+      gridArea.innerHTML = ''; // 画面を一度きれいにリセットして重複を防ぐ
+
       const activeFilter = isSelectingMode ? selectModeCat : currentCat;
       const list = items.filter(i => {
         if (activeFilter === 'お気に入り') return i.isFav;
@@ -387,7 +390,9 @@
         div.className = 'card';
         if (isSelectingMode) {
           div.classList.add('selectable');
-          if (selectedItemIds.includes(item.id)) div.classList.add('selected');
+          if (selectedItemIds.includes(item.id)) {
+            div.classList.add('selected'); // 保持されているIDなら水色の選択枠をつける
+          }
         }
 
         div.innerHTML = `
@@ -401,13 +406,14 @@
 
         div.addEventListener('click', () => {
           if (isSelectingMode) {
+            // タブを切り替えても選択状態の配列（selectedItemIds）に追加・削除が行われる
             if (selectedItemIds.includes(item.id)) {
               selectedItemIds = selectedItemIds.filter(id => id !== item.id);
             } else {
               selectedItemIds.push(item.id);
             }
             if (selectCountText) selectCountText.innerText = `${selectedItemIds.length}個 選択中`;
-            renderItems();
+            renderItems(); // 再描画して水色の枠を即座に反映
           } else {
             selectedId = item.id;
             if (lbImg) lbImg.src = item.img;
@@ -434,6 +440,9 @@
 
     // コーデ一覧描画
     function renderOutfits() {
+      if (!coordArea) return;
+      coordArea.innerHTML = '';
+
       if (outfits.length === 0) {
         coordArea.innerHTML = '<p style="text-align:center; color:#888; padding:30px;">登録されたコーディネートがありません</p>';
         return;
@@ -479,7 +488,7 @@
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
             selectModeCat = cat;
-            renderItems();
+            renderItems(); // 選択状態を保持したまま指定ジャンルの服だけを表示
           } else {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             e.target.classList.add('active');
@@ -630,7 +639,7 @@
               saveItems();
             }
             isEditing = false;
-            if (addModal) addModal.classList.add('show');
+            if (addModal) addModal.classList.remove('show');
             render();
           } else {
             const file = fileInput && fileInput.files ? fileInput.files[0] : null;
@@ -667,7 +676,7 @@
 
                   saveItems();
                   render();
-                  if (addModal) addModal.classList.add('show');
+                  if (addModal) addModal.classList.remove('show');
                   if (addForm) addForm.reset();
                 };
                 img.src = evt.target.result;
