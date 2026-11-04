@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <!-- iPhone（iOS）のホーム画面用アイコン -->
   <link rel="apple-touch-icon" href="icon.PNG">
-
-  <!-- ブラウザのタブやAndroid用アイコン -->
   <link rel="icon" type="image/png" href="icon.PNG">
   <title>マイ・クローゼット</title>
   <style>
@@ -30,7 +27,7 @@
     }
     header h1 { font-size: 1.1rem; font-weight: 600; }
 
-    /* カテゴリタブ（スクロール可能） */
+    /* カテゴリタブ */
     .nav-tabs {
       display: flex;
       gap: 8px;
@@ -85,7 +82,7 @@
     .card-cat { font-size: 0.7rem; color: #007aff; font-weight: bold; }
     .card-tags { font-size: 0.75rem; color: #666; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* お気に入り（ハート）ボタン */
+    /* お気に入りボタン */
     .fav-btn {
       position: absolute;
       top: 8px;
@@ -104,6 +101,43 @@
       z-index: 2;
     }
 
+    /* 選択モード用スタイル */
+    .card.selectable.selected {
+      outline: 3px solid #007aff;
+      transform: scale(0.98);
+    }
+    .card.selectable.selected::after {
+      content: "✓";
+      position: absolute;
+      top: 8px; left: 8px;
+      background: #007aff; color: #fff;
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 0.9rem;
+    }
+
+    /* コーデ用カードスタイル */
+    .coord-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 12px;
+    }
+    .coord-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; font-weight: bold; font-size: 0.95rem;
+    }
+    .coord-images {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    }
+    .coord-img {
+      width: 80px; height: 80px; object-fit: cover; border-radius: 8px; background: #eee;
+    }
+    .coord-del-btn {
+      background: #ff3b30; color: white; border: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer;
+    }
+
     /* 登録用フローティングボタン */
     .fab {
       position: fixed;
@@ -120,6 +154,23 @@
       z-index: 20;
       cursor: pointer;
     }
+
+    /* コーデ選択時の下部バー */
+    .selection-bar {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; width: 100%;
+      background: #ffffff;
+      border-top: 1px solid #e5e5ea;
+      padding: 12px 20px;
+      z-index: 150;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    .selection-bar.show { display: flex; }
+    .btn-cancel { background: #8e8e93; color: white; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+    .btn-complete { background: #34c759; color: white; border: none; padding: 10px 24px; border-radius: 20px; font-weight: bold; cursor: pointer; }
 
     /* モーダル共通スタイル */
     .modal {
@@ -163,7 +214,7 @@
       border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px;
     }
 
-    /* 写真拡大モーダル（ライトボックス） */
+    /* ライトボックス */
     .lightbox {
       display: none;
       position: fixed;
@@ -177,16 +228,8 @@
     }
     .lightbox.show { display: flex; }
     .lightbox img { max-width: 90%; max-height: 55vh; border-radius: 8px; object-fit: contain; }
-    
-    .lightbox-info {
-      color: #fff;
-      text-align: center;
-      margin-top: 12px;
-      font-size: 0.95rem;
-    }
-    .lightbox-tools {
-      margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
-    }
+    .lightbox-info { color: #fff; text-align: center; margin-top: 12px; font-size: 0.95rem; }
+    .lightbox-tools { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .btn-edit { background: #34c759; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
     .btn-delete { background: #ff3b30; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
     .btn-close-lb { background: #555; color: #fff; border: none; padding: 10px 18px; border-radius: 20px; font-weight: bold; cursor: pointer; }
@@ -201,24 +244,33 @@
   <!-- カテゴリタブ -->
   <nav class="nav-tabs" id="tabContainer">
     <button class="tab-btn active" data-cat="すべて">すべて</button>
+    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
     <button class="tab-btn" data-cat="トップス">トップス</button>
     <button class="tab-btn" data-cat="アウター">アウター</button>
     <button class="tab-btn" data-cat="パンツ">パンツ</button>
     <button class="tab-btn" data-cat="帽子">帽子</button>
     <button class="tab-btn" data-cat="ファッション小物">ファッション小物</button>
     <button class="tab-btn" data-cat="バッグ">バッグ</button>
-    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
+    <button class="tab-btn" data-cat="コーディネート">✨ コーディネート</button>
   </nav>
 
-  <!-- 服一覧エリア -->
+  <!-- メイン表示エリア -->
   <main class="container">
     <div class="item-grid" id="gridArea"></div>
+    <div id="coordArea" style="display: none;"></div>
   </main>
 
   <!-- 服を登録ボタン -->
   <button class="fab" id="openAddModalBtn">＋ 服を登録</button>
 
-  <!-- 新規登録モーダル画面 -->
+  <!-- コーデ選択時の固定下部バー -->
+  <div class="selection-bar" id="selectionBar">
+    <button class="btn-cancel" id="cancelSelectBtn">キャンセル</button>
+    <span id="selectCountText" style="font-weight: bold; font-size: 0.9rem;">0個 選択中</span>
+    <button class="btn-complete" id="completeSelectBtn">完了</button>
+  </div>
+
+  <!-- 新規登録モーダル -->
   <div class="modal" id="addModal">
     <div class="modal-box">
       <div class="modal-head">
@@ -262,39 +314,63 @@
   </div>
 
   <script>
-    // LocalStorageからデータを読み込む
+    // LocalStorage読み込み
     let items = JSON.parse(localStorage.getItem('my_closet_items')) || [
       { id: 1, cat: 'トップス', img: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500', tags: '白T, 夏物', isFav: true },
       { id: 2, cat: 'パンツ', img: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500', tags: 'デニム', isFav: false },
       { id: 3, cat: 'アウター', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500', tags: 'ジャケット, 黒', isFav: false }
     ];
 
-    // データをLocalStorageに保存する関数
-    function saveItems() {
-      localStorage.setItem('my_closet_items', JSON.stringify(items));
-    }
+    let outfits = JSON.parse(localStorage.getItem('my_closet_outfits')) || [];
+
+    function saveItems() { localStorage.setItem('my_closet_items', JSON.stringify(items)); }
+    function saveOutfits() { localStorage.setItem('my_closet_outfits', JSON.stringify(outfits)); }
 
     let currentCat = 'すべて';
     let selectedId = null;
     let isEditing = false;
 
+    // コーデ作成用選択モードの変数
+    let isSelectingMode = false;
+    let selectedItemIds = [];
+
     const gridArea = document.getElementById('gridArea');
+    const coordArea = document.getElementById('coordArea');
+    const fab = document.getElementById('openAddModalBtn');
+    const selectionBar = document.getElementById('selectionBar');
+    const selectCountText = document.getElementById('selectCountText');
+
     const addModal = document.getElementById('addModal');
     const lightbox = document.getElementById('lightbox');
     const lbImg = document.getElementById('lbImg');
     const lbInfo = document.getElementById('lbInfo');
 
-    // 一覧描画処理
+    // 画面描画関数
     function render() {
       gridArea.innerHTML = '';
-      
-      // フィルター条件分岐（お気に入り or 各カテゴリ or すべて）
+      coordArea.innerHTML = '';
+
+      if (currentCat === 'コーディネート') {
+        gridArea.style.display = 'none';
+        coordArea.style.display = 'block';
+        fab.innerText = '＋ コーデを作成';
+        renderOutfits();
+      } else {
+        gridArea.style.display = 'grid';
+        coordArea.style.display = 'none';
+        fab.innerText = '＋ 服を登録';
+        renderItems();
+      }
+    }
+
+    // 服一覧の描画
+    function renderItems() {
       const list = items.filter(i => {
         if (currentCat === 'お気に入り') return i.isFav;
         if (currentCat === 'すべて') return true;
         return i.cat === currentCat;
       });
-      
+
       if (list.length === 0) {
         gridArea.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:#888; padding:30px;">アイテムがありません</p>';
         return;
@@ -303,8 +379,13 @@
       list.forEach(item => {
         const div = document.createElement('div');
         div.className = 'card';
+        if (isSelectingMode) {
+          div.classList.add('selectable');
+          if (selectedItemIds.includes(item.id)) div.classList.add('selected');
+        }
+
         div.innerHTML = `
-          <button class="fav-btn" data-id="${item.id}">${item.isFav ? '❤️' : '🤍'}</button>
+          ${!isSelectingMode ? `<button class="fav-btn">${item.isFav ? '❤️' : '🤍'}</button>` : ''}
           <img src="${item.img}" class="card-img" alt="">
           <div class="card-body">
             <div class="card-cat">${item.cat}</div>
@@ -312,30 +393,81 @@
           </div>
         `;
 
-        // お気に入りボタンタップイベント
-        const favBtn = div.querySelector('.fav-btn');
-        favBtn.addEventListener('click', (e) => {
-          e.stopPropagation(); // カード全体の拡大表示イベントを防ぐ
-          item.isFav = !item.isFav;
-          saveItems();
-          render();
-        });
+        if (isSelectingMode) {
+          // 選択モード時はタップで選択/解除
+          div.addEventListener('click', () => {
+            if (selectedItemIds.includes(item.id)) {
+              selectedItemIds = selectedItemIds.filter(id => id !== item.id);
+            } else {
+              selectedItemIds.push(item.id);
+            }
+            selectCountText.innerText = `${selectedItemIds.length}個 選択中`;
+            renderItems();
+          });
+        } else {
+          // 通常時
+          const favBtn = div.querySelector('.fav-btn');
+          if (favBtn) {
+            favBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              item.isFav = !item.isFav;
+              saveItems();
+              render();
+            });
+          }
 
-        // カード全体のタップで拡大表示
-        div.addEventListener('click', () => {
-          selectedId = item.id;
-          lbImg.src = item.img;
-          lbInfo.innerHTML = `<b>[${item.cat}]</b> #${item.tags.replace(/,/g, ' #')} ${item.isFav ? '❤️' : ''}`;
-          lightbox.classList.add('show');
-        });
+          div.addEventListener('click', () => {
+            selectedId = item.id;
+            lbImg.src = item.img;
+            lbInfo.innerHTML = `<b>[${item.cat}]</b> #${item.tags.replace(/,/g, ' #')} ${item.isFav ? '❤️' : ''}`;
+            lightbox.classList.add('show');
+          });
+        }
 
         gridArea.appendChild(div);
       });
     }
 
-    // カテゴリタブ切り替えイベント
+    // コーデ一覧の描画
+    function renderOutfits() {
+      if (outfits.length === 0) {
+        coordArea.innerHTML = '<p style="text-align:center; color:#888; padding:30px;">登録されたコーディネートがありません</p>';
+        return;
+      }
+
+      outfits.forEach((of, index) => {
+        const div = document.createElement('div');
+        div.className = 'coord-card';
+        
+        // セットに含まれる服を取得
+        const ofItems = of.itemIds.map(id => items.find(i => i.id === id)).filter(Boolean);
+
+        div.innerHTML = `
+          <div class="coord-header">
+            <span>コーデ ${outfits.length - index}</span>
+            <button class="coord-del-btn" data-id="${of.id}">削除</button>
+          </div>
+          <div class="coord-images">
+            ${ofItems.map(i => `<img src="${i.img}" class="coord-img">`).join('')}
+          </div>
+        `;
+
+        div.querySelector('.coord-del-btn').addEventListener('click', () => {
+          if (confirm('このコーディネートを削除しますか？')) {
+            outfits = outfits.filter(o => o.id !== of.id);
+            saveOutfits();
+            renderOutfits();
+          }
+        });
+
+        coordArea.appendChild(div);
+      });
+    }
+
+    // カテゴリタブ切り替え
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        if (isSelectingMode) cancelSelection(); // 選択中なら解除
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         currentCat = e.target.getAttribute('data-cat');
@@ -343,38 +475,85 @@
       });
     });
 
-    // 新規登録モーダルを開く
-    document.getElementById('openAddModalBtn').addEventListener('click', () => {
-      isEditing = false;
-      document.getElementById('modalTitle').innerText = '服を新しく登録';
-      document.getElementById('submitBtnText').innerText = '登録する';
-      document.getElementById('fileInputContainer').style.display = 'block';
-      document.getElementById('fileInput').required = true;
-      document.getElementById('addForm').reset();
-      addModal.classList.add('show');
+    // 「＋ 服を登録」/「＋ コーデを作成」ボタンを押したとき
+    fab.addEventListener('click', () => {
+      if (currentCat === 'コーディネート') {
+        // コーデ選択モード開始
+        isSelectingMode = true;
+        selectedItemIds = [];
+        selectionBar.classList.add('show');
+        fab.style.display = 'none';
+        selectCountText.innerText = '0個 選択中';
+        
+        // 服一覧を表示
+        gridArea.style.display = 'grid';
+        coordArea.style.display = 'none';
+        renderItems();
+      } else {
+        // 通常の服登録モーダル
+        isEditing = false;
+        document.getElementById('modalTitle').innerText = '服を新しく登録';
+        document.getElementById('submitBtnText').innerText = '登録する';
+        document.getElementById('fileInputContainer').style.display = 'block';
+        document.getElementById('fileInput').required = true;
+        document.getElementById('addForm').reset();
+        addModal.classList.add('show');
+      }
     });
 
-    // モーダルを閉じる
+    // 選択完了ボタンを押したとき（コーデ保存）
+    document.getElementById('completeSelectBtn').addEventListener('click', () => {
+      if (selectedItemIds.length === 0) {
+        alert('服を1つ以上選択してください！');
+        return;
+      }
+
+      outfits.unshift({
+        id: Date.now(),
+        itemIds: selectedItemIds
+      });
+
+      saveOutfits();
+      cancelSelection();
+      render();
+    });
+
+    // 選択キャンセル
+    document.getElementById('cancelSelectBtn').addEventListener('click', cancelSelection);
+
+    function cancelSelection() {
+      isSelectingMode = false;
+      selectedItemIds = [];
+      selectionBar.classList.remove('show');
+      fab.style.display = 'block';
+      if (currentCat === 'コーディネート') {
+        gridArea.style.display = 'none';
+        coordArea.style.display = 'block';
+      }
+      render();
+    }
+
+    // モーダル・削除・編集イベント
     document.getElementById('closeAddModalBtn').addEventListener('click', () => addModal.classList.remove('show'));
     document.getElementById('closeLbBtn').addEventListener('click', () => lightbox.classList.remove('show'));
 
-    // 削除処理
     document.getElementById('deleteBtn').addEventListener('click', () => {
       if (selectedId && confirm('このアイテムを削除しますか？')) {
         items = items.filter(i => i.id !== selectedId);
+        // コーデに含まれる削除アイテムも整理
+        outfits.forEach(o => { o.itemIds = o.itemIds.filter(id => id !== selectedId); });
         saveItems();
+        saveOutfits();
         lightbox.classList.remove('show');
         render();
       }
     });
 
-    // タグ編集ボタンを押したとき
     document.getElementById('editBtn').addEventListener('click', () => {
       const targetItem = items.find(i => i.id === selectedId);
       if (!targetItem) return;
 
       lightbox.classList.remove('show');
-
       isEditing = true;
       document.getElementById('modalTitle').innerText = 'タグ・カテゴリを編集';
       document.getElementById('submitBtnText').innerText = '変更を保存する';
@@ -383,11 +562,10 @@
 
       document.getElementById('catSelect').value = targetItem.cat;
       document.getElementById('tagInput').value = targetItem.tags;
-
       addModal.classList.add('show');
     });
 
-    // フォーム送信（新規登録 or 編集保存）
+    // 服の登録/編集フォーム送信
     document.getElementById('addForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const cat = document.getElementById('catSelect').value;
@@ -416,15 +594,9 @@
               const max_size = 800;
 
               if (width > height) {
-                if (width > max_size) {
-                  height *= max_size / width;
-                  width = max_size;
-                }
+                if (width > max_size) { height *= max_size / width; width = max_size; }
               } else {
-                if (height > max_size) {
-                  width *= max_size / height;
-                  height = max_size;
-                }
+                if (height > max_size) { width *= max_size / height; height = max_size; }
               }
 
               canvas.width = width;
@@ -439,7 +611,7 @@
                 cat: cat,
                 img: compressedDataUrl,
                 tags: tags,
-                isFav: false // 初期状態は未お気に入り
+                isFav: false
               });
 
               saveItems();
@@ -454,7 +626,6 @@
       }
     });
 
-    // 初期起動
     render();
   </script>
 </body>
