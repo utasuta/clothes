@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="apple-touch-icon" href="icon.png">
-  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.PNG">
+  <link rel="icon" type="image/png" href="icon.PNG">
   <title>マイ・クローゼット</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -70,6 +70,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
       cursor: pointer;
       position: relative;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
     }
     .card-img {
       width: 100%;
@@ -101,19 +102,24 @@
       z-index: 2;
     }
 
-    /* 選択モード用スタイル */
+    /* 選択モード中のカードデザイン（水色強調） */
+    .card.selectable {
+      border: 2px solid transparent;
+    }
     .card.selectable.selected {
-      outline: 3px solid #007aff;
+      border: 3px solid #32ade6; /* 鮮やかな水色 */
+      background-color: #f0f9ff;  /* 選択時のごく薄い水色の背景 */
+      box-shadow: 0 4px 12px rgba(50, 173, 230, 0.3);
       transform: scale(0.98);
     }
     .card.selectable.selected::after {
-      content: "✓";
+      content: "✓ 選択中";
       position: absolute;
       top: 8px; left: 8px;
-      background: #007aff; color: #fff;
-      width: 26px; height: 26px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: bold; font-size: 0.9rem;
+      background: #32ade6; color: #fff;
+      padding: 4px 8px; border-radius: 12px;
+      font-weight: bold; font-size: 0.75rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
     /* コーデ用カードスタイル */
@@ -244,14 +250,14 @@
   <!-- カテゴリタブ -->
   <nav class="nav-tabs" id="tabContainer">
     <button class="tab-btn active" data-cat="すべて">すべて</button>
-    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
     <button class="tab-btn" data-cat="トップス">トップス</button>
     <button class="tab-btn" data-cat="アウター">アウター</button>
     <button class="tab-btn" data-cat="パンツ">パンツ</button>
     <button class="tab-btn" data-cat="帽子">帽子</button>
     <button class="tab-btn" data-cat="ファッション小物">ファッション小物</button>
     <button class="tab-btn" data-cat="バッグ">バッグ</button>
-    <button class="tab-btn" data-cat="コーディネート">✨ コーディネート</button>
+    <button class="tab-btn" data-cat="お気に入り">❤️ お気に入り</button>
+    <button class="tab-btn" data-cat="コーディネート">コーディネート</button>
   </nav>
 
   <!-- メイン表示エリア -->
@@ -624,7 +630,7 @@
               saveItems();
             }
             isEditing = false;
-            if (addModal) addModal.classList.remove('show');
+            if (addModal) addModal.classList.add('show');
             render();
           } else {
             const file = fileInput && fileInput.files ? fileInput.files[0] : null;
@@ -661,7 +667,7 @@
 
                   saveItems();
                   render();
-                  if (addModal) addModal.classList.remove('show');
+                  if (addModal) addModal.classList.add('show');
                   if (addForm) addForm.reset();
                 };
                 img.src = evt.target.result;
