@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <!-- iPhone（iOS）のホーム画面用アイコン -->
-  <link rel="apple-touch-icon" href="icon.PNG">
+  <link rel="apple-touch-icon" href="icon.png">
 
   <!-- ブラウザのタブやAndroid用アイコン -->
-  <link rel="icon" type="image/png" href="icon.PNG">
+  <link rel="icon" type="image/png" href="icon.png">
   <title>マイ・クローゼット</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -241,24 +241,21 @@
   </div>
 
   <script>
-    // 初期データ
-    let items = [
+    // LocalStorageからデータを読み込む（保存データがなければ初期データを使用）
+    let items = JSON.parse(localStorage.getItem('my_closet_items')) || [
       { id: 1, cat: 'トップス', img: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500', tags: '白T, 夏物' },
       { id: 2, cat: 'パンツ', img: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500', tags: 'デニム' },
       { id: 3, cat: 'アウター', img: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500', tags: 'ジャケット, 黒' }
     ];
-// LocalStorageからデータを読み込む（保存データがなければ初期データを使用）
-let items = JSON.parse(localStorage.getItem('my_closet_items')) || [
-  { id: 1, cat: 'トップス', img: '...', tags: '白T, 夏物' },
-  ...
-];
+
     // データをLocalStorageに保存する関数
-function saveItems() {
-  localStorage.setItem('my_closet_items', JSON.stringify(items));
-}
+    function saveItems() {
+      localStorage.setItem('my_closet_items', JSON.stringify(items));
+    }
+
     let currentCat = 'すべて';
     let selectedId = null;
-    let isEditing = false; // 編集モードかどうかのフラグ
+    let isEditing = false;
 
     const gridArea = document.getElementById('gridArea');
     const addModal = document.getElementById('addModal');
@@ -286,7 +283,6 @@ function saveItems() {
             <div class="card-tags">#${item.tags.replace(/,/g, ' #')}</div>
           </div>
         `;
-        // タップで拡大
         div.addEventListener('click', () => {
           selectedId = item.id;
           lbImg.src = item.img;
@@ -326,6 +322,7 @@ function saveItems() {
     document.getElementById('deleteBtn').addEventListener('click', () => {
       if (selectedId && confirm('このアイテムを削除しますか？')) {
         items = items.filter(i => i.id !== selectedId);
+        saveItems(); // 変更を保存
         lightbox.classList.remove('show');
         render();
       }
@@ -336,16 +333,14 @@ function saveItems() {
       const targetItem = items.find(i => i.id === selectedId);
       if (!targetItem) return;
 
-      lightbox.classList.remove('show'); // 拡大画面を閉じる
+      lightbox.classList.remove('show');
 
-      // 編集モードでモーダルを開く
       isEditing = true;
       document.getElementById('modalTitle').innerText = 'タグ・カテゴリを編集';
       document.getElementById('submitBtnText').innerText = '変更を保存する';
-      document.getElementById('fileInputContainer').style.display = 'none'; // 写真は変更不可（そのままでOK）
+      document.getElementById('fileInputContainer').style.display = 'none';
       document.getElementById('fileInput').required = false;
 
-      // 現在の値をフォームにセット
       document.getElementById('catSelect').value = targetItem.cat;
       document.getElementById('tagInput').value = targetItem.tags;
 
@@ -359,17 +354,17 @@ function saveItems() {
       const tags = document.getElementById('tagInput').value || 'なし';
 
       if (isEditing) {
-        // 編集保存の場合
         const targetItem = items.find(i => i.id === selectedId);
         if (targetItem) {
           targetItem.cat = cat;
           targetItem.tags = tags;
+          saveItems(); // 変更を保存
         }
         isEditing = false;
+        addModal.classList.add('show').remove(); // 微調整
         addModal.classList.remove('show');
         render();
       } else {
-        // 新規登録の場合
         const file = document.getElementById('fileInput').files[0];
         if (file) {
           const reader = new FileReader();
@@ -380,6 +375,7 @@ function saveItems() {
               img: evt.target.result,
               tags: tags
             });
+            saveItems(); // 新規データを保存
             render();
             addModal.classList.remove('show');
             document.getElementById('addForm').reset();
